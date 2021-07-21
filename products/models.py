@@ -24,7 +24,7 @@ class Product(TimeStampModel):
     region         = models.CharField(max_length=200)
     price          = models.DecimalField(decimal_places=2, max_digits=10)
     is_group       = models.BooleanField()
-    backgruond_url = models.CharField(max_length=2000)
+    background_url = models.CharField(max_length=2000)
     is_deleted     = models.BooleanField(default=False)
 
     class Meta: 
