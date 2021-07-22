@@ -3,7 +3,9 @@ from django.db   import models
 from core.models import TimeStampModel
 
 class User(TimeStampModel): 
-    kakao_id = models.CharField(max_length=200)
+    kakao_id    = models.CharField(max_length=200)
+    name        = models.CharField(max_length=200, null=True)
+    profile_url = models.CharField(max_length=2000, null=True)
 
     class Meta: 
         db_table = 'users'
