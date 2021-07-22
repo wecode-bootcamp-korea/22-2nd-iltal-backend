@@ -2,25 +2,25 @@ import json
 
 from django.views import View
 from django.http  import JsonResponse
+
 from users.models import User, Host
 
 class HostView(View):
     def post(self, request, user_id):
         try:
-            hostuser    = json.loads(request.body)
+            data        = json.loads(request.body)
             user        = User.objects.get(id = user_id)
-            nickname    = hostuser['nickname']
+            nickname    = data['nickname']
             profile_url = user.profile_url
-            is_deleted  = 0
             
-            if Host.objects.filter(user_id = user.id) :
+            if Host.objects.filter(user_id = user.id).exists() :
                 return JsonResponse({"MESSAGE": "DUPLE_USER"}, status=404)
 
             Host.objects.create(
                 user_id     = user.id,
                 nickname    = nickname,
                 profile_url = profile_url,
-                is_deleted  = is_deleted
+                is_deleted  = False
             )
 
         except KeyError:
