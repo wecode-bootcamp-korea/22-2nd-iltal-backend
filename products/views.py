@@ -26,8 +26,8 @@ class ProductView(View):
                 aws_secret_access_key = AWS_SECRET_ACCESS_KEY
             )
             
-            background_url = json.loads(request.body)["image_file"]
-            background_url = os.open(background_url)
+            background_url = request.FILES["background_url"]
+            print(background_url)
 
             # s3_client.upload_fileobj(
             #     background_url,
