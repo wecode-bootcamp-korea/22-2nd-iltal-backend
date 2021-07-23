@@ -1,54 +1,47 @@
 import io
 import os
+import re
 import boto3
 import json
-from io  import BytesIO
-from django.core import files
+import uuid
+
 from django.views    import View
 from django.http     import JsonResponse
-from django.core.files.images import ImageFile
 
-from datetime import datetime
+from datetime        import datetime
 from products.models import Product
 from iltal.settings  import AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
 
 class ProductView(View):
     def post(self, request):
         try:
-            #data = json.loads(request.body)
-
-            # if Product.objects.filter(host_id = data['host_id']).exists() :
-            #     return JsonResponse({"MESSAGE": "PRODUCT_EXISTS"}, status=404)
-
             s3_client = boto3.client(
                 's3',
                 aws_access_key_id = AWS_ACCESS_KEY_ID,
                 aws_secret_access_key = AWS_SECRET_ACCESS_KEY
             )
-            
+
             background_url = request.FILES["background_url"]
+            filename = uuid.uuid4().hex
             s3_client.upload_fileobj(
                 background_url,
                 'hsahnprojectdb',
-                'test',
+                filename,
                 ExtraArgs = {
                     "ContentType": background_url.content_type,
                 }
             )
-            # image_url = "http://dkinterest.s3.ap-northeast-2.amazonaws.com/"+image_time+"."+image_type
-            # image_url = image_url.replace(" ","/")
-            #Pin.objects.create(image_url = image_url)
-
-            # Product.objects.create(
-            #     title           =  data["title"],
-            #     region          =  data["region"],
-            #     price           =  data["price"],
-            #     is_group        =  data["is_group"],
-            #     background_url  =  data["background_url"],
-            #     is_deleted      =  False,
-            #     host_id         =  data["host_id"],
-            #     subcategory_id  =  data["subcategory_id"]
-            # )    
+            Product.objects.create (
+                title           =  request.POST.get('title'),
+                region          =  request.POST.get('region'),
+                coordinate      =  [{"test":"aa"}],
+                price           =  request.POST.get('price'),
+                is_group        =  request.POST.get('is_group'),
+                background_url  =  'https://hsahnprojectdb.s3.us-east-2.amazonaws.com/' + filename,
+                is_deleted      =  False,
+                host_id         =  request.POST.get('host_id'),
+                subcategory_id  =  request.POST.get('subcategory_id')
+            )    
 
         except KeyError:
             return JsonResponse({"MESSAGE": "KEY_ERROR"}, status=404)
