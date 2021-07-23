@@ -27,16 +27,14 @@ class ProductView(View):
             )
             
             background_url = request.FILES["background_url"]
-            print(background_url)
-
-            # s3_client.upload_fileobj(
-            #     background_url,
-            #     'hsahnprojectdb',
-            #     'test',
-            #     ExtraArgs = {
-            #         "ContentType": 'image/png'
-            #     }
-            # )
+            s3_client.upload_fileobj(
+                background_url,
+                'hsahnprojectdb',
+                'test',
+                ExtraArgs = {
+                    "ContentType": background_url.content_type,
+                }
+            )
             # image_url = "http://dkinterest.s3.ap-northeast-2.amazonaws.com/"+image_time+"."+image_type
             # image_url = image_url.replace(" ","/")
             #Pin.objects.create(image_url = image_url)

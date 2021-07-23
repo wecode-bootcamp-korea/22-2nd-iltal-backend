@@ -7,9 +7,9 @@ from users.models import User, Host
 class HostView(View):
     def post(self, request, user_id):
         try:
-            hostuser    = json.loads(request.body)
+            host    = json.loads(request.body)
             user        = User.objects.get(id = user_id)
-            nickname    = hostuser['nickname']
+            nickname    = host['nickname']
             profile_url = user.profile_url
             is_deleted  = 0
             
@@ -33,12 +33,12 @@ class HostView(View):
 
     def get(self, request, user_id):
         try:
-            hostuser = Host.objects.select_related('user').get(user_id = user_id)
+            host = Host.objects.get(user_id = user_id)
             result   = {
-                'id'            : hostuser.id,
-                'user_id'       : hostuser.user_id,
-                'nickname'      : hostuser.nickname,
-                'profile_url'   : hostuser.profile_url
+                'id'            : host.id,
+                'user_id'       : host.user_id,
+                'nickname'      : host.nickname,
+                'profile_url'   : host.profile_url
             }
 
         except KeyError:
