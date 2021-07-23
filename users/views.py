@@ -6,7 +6,6 @@ from django.http  import JsonResponse
 from users.models import User, Host
 
 class HostView(View):
-
     def get(self, request, user_id):
         try:
             hostuser = Host.objects.get(user_id = user_id)
@@ -24,23 +23,17 @@ class HostView(View):
             return JsonResponse({"MESSAGE": "INVALID_HOST"}, status=404)
         
         return JsonResponse(result, status=200)       
-
     def post(self, request, user_id):
         try:
             data        = json.loads(request.body)
-            print(user_id)
-            user        = User.objects.get(id = user_id)
-            print(user)
-            nickname    = data['nickname']
-            profile_url = data['profile_url']
-            
+            user        = User.objects.get(id = user_id)            
             if Host.objects.filter(user_id = user.id).exists() :
                 return JsonResponse({"MESSAGE": "DUPLE_USER"}, status=404)
 
             Host.objects.create(
                 user_id     = user.id,
-                nickname    = nickname,
-                profile_url = profile_url,
+                nickname    = data['nickname'],
+                profile_url = data['profile_url'],
                 is_deleted  = False
             )
 
@@ -51,15 +44,12 @@ class HostView(View):
             return JsonResponse({"MESSAGE": "INVALID_USER"}, status=404)
         
         return JsonResponse({'MESSAGE':'SUCCESS'}, status=201)
-
     def patch(self, request, user_id):
             try:
                 data             = json.loads(request.body)
-                nickname         = data['nickname']
-                profile_url      = data['profile_url']
                 host             = Host.objects.get(user_id = user_id)
-                host.nickname    = nickname
-                host.profile_url = profile_url
+                host.nickname    = data['nickname']
+                host.profile_url = data['profile_url']
                 host.save()
 
             except KeyError:

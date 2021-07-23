@@ -1,9 +1,10 @@
-from pathlib import Path
-from my_settings import SECRET_KEY, DATABASES
+import os
+
+from pathlib     import Path
+from my_settings import SECRET_KEY, DATABASES, AWS_ACCESS_KEY_ID , AWS_SECRET_ACCESS_KEY
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -15,7 +16,6 @@ SECRET_KEY = SECRET_KEY
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
 
 # Application definition
 
@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'books',
     'core',
     'django_extensions',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -65,13 +66,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'iltal.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = DATABASES
 
-
+DEFAULT_FILE_STORAGE = 'config.asset_storage.MediaStorage' 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
@@ -103,7 +103,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = False
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
@@ -144,7 +143,6 @@ CORS_ALLOW_HEADERS = (
 		#만약 허용해야할 추가적인 헤더키가 있다면?(사용자정의 키) 여기에 추가하면 됩니다.
 )
 
-
 LOGGING = {
     'disable_existing_loggers': False,
     'version': 1,
@@ -175,3 +173,25 @@ LOGGING = {
         },
     },
 }
+
+# S3 설정을 위한 변수
+# AWS_xxx 의 변수들은 aws-S3, boto3 모듈을 위한 변수들이다.
+
+# 엑세스 키와 시크릿 키는 다른 파일로 작성, 임포트하여 사용
+AWS_ACCESS_KEY_ID = AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY = AWS_SECRET_ACCESS_KEY
+
+AWS_REGION = 'ap-northeast-2'
+AWS_STORAGE_BUCKET_NAME = 'beap-test-shop'
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (
+    AWS_STORAGE_BUCKET_NAME, AWS_REGION)
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+AWS_DEFAULT_ACL = 'public-read'
+AWS_LOCATION = 'static'
+STATIC_URL = 'https://%s/%s/' % (AWS_S3_CUSTOM_DOMAIN, AWS_LOCATION)
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
+]
