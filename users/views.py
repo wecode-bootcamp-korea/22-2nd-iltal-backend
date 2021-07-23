@@ -45,21 +45,18 @@ class HostView(View):
                 'nickname'      : host.nickname,
                 'profile_url'   : host.profile_url
             }
-
+            
         except KeyError:
             return JsonResponse({"MESSAGE": "KEY_ERROR"}, status=404)
-
         except Host.DoesNotExist:
-            return JsonResponse({"MESSAGE": "INVALID_HOST"}, status=404)
-        
+            return JsonResponse({"MESSAGE": "INVALID_HOST"}, status=404)        
         return JsonResponse(result, status=200)       
     def post(self, request, user_id):
         try:
-            data        = json.loads(request.body)
-            user        = User.objects.get(id = user_id)            
+            data = json.loads(request.body)
+            user = User.objects.get(id = user_id)            
             if Host.objects.filter(user_id = user.id).exists() :
                 return JsonResponse({"MESSAGE": "DUPLE_USER"}, status=404)
-
             Host.objects.create(
                 user_id     = user.id,
                 nickname    = data['nickname'],
@@ -69,10 +66,8 @@ class HostView(View):
 
         except KeyError:
             return JsonResponse({"MESSAGE": "KEY_ERROR"}, status=404)
-
         except User.DoesNotExist:
-            return JsonResponse({"MESSAGE": "INVALID_USER"}, status=404)
-        
+            return JsonResponse({"MESSAGE": "INVALID_USER"}, status=404)        
         return JsonResponse({'MESSAGE':'SUCCESS'}, status=201)
     def patch(self, request, user_id):
             try:
@@ -84,8 +79,6 @@ class HostView(View):
 
             except KeyError:
                 return JsonResponse({"MESSAGE": "KEY_ERROR"}, status=404)
-
             except Host.DoesNotExist:
-                return JsonResponse({"MESSAGE": "INVALID_HOST"}, status=404)
-            
+                return JsonResponse({"MESSAGE": "INVALID_HOST"}, status=404)            
             return JsonResponse({'MESSAGE':'SUCCESS'}, status=201)
