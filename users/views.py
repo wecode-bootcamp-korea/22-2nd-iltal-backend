@@ -3,8 +3,7 @@ import json, re, bcrypt
 from django.http      import JsonResponse
 from django.views     import View
 
-from users.models import User, Host
-
+from users.models   import User
 class SignupView(View):
     def post(self, request):
 
