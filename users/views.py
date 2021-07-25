@@ -3,7 +3,8 @@ import json, re, bcrypt
 from django.http      import JsonResponse
 from django.views     import View
 
-from users.models   import User
+from users.models   import User, Host
+
 class SignupView(View):
     def post(self, request):
 
@@ -35,9 +36,9 @@ class SignupView(View):
             return JsonResponse ({"MESSAGE":"KEY_ERROR"}, status = 400)
 
 class HostView(View):
-    def get(self, request, user_id):
+    def get(self, request):
         try:
-            host = Host.objects.get(user_id = user_id)
+            host = Host.objects.get(user_id = request.user.id)
             result   = {
                 'id'            : host.id,
                 'user_id'       : host.user_id,
