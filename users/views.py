@@ -1,9 +1,10 @@
 import json, re, bcrypt
 
-from django.http      import JsonResponse
-from django.views     import View
+from django.views import View
+from django.http  import JsonResponse
 
-from users.models   import User, Host
+from users.models import User, Host
+from users.models import User
 
 class SignupView(View):
     def post(self, request):
@@ -63,7 +64,6 @@ class HostView(View):
                 profile_url = data['profile_url'],
                 is_deleted  = False
             )
-
         except KeyError:
             return JsonResponse({"MESSAGE": "KEY_ERROR"}, status=404)
         except User.DoesNotExist:
@@ -81,4 +81,21 @@ class HostView(View):
                 return JsonResponse({"MESSAGE": "KEY_ERROR"}, status=404)
             except Host.DoesNotExist:
                 return JsonResponse({"MESSAGE": "INVALID_HOST"}, status=404)            
-            return JsonResponse({'MESSAGE':'SUCCESS'}, status=201)
+            return JsonResponse({'MESSAGE':'SUCCESS'}, status=201)      
+    def get(self, request, user_id):
+        try:
+            hostuser = Host.objects.select_related('user').get(user_id = user_id)
+            result   = {
+                'id'            : hostuser.id,
+                'user_id'       : hostuser.user_id,
+                'nickname'      : hostuser.nickname,
+                'profile_url'   : hostuser.profile_url
+            }
+
+        except KeyError:
+            return JsonResponse({"MESSAGE": "KEY_ERROR"}, status=404)
+
+        except User.DoesNotExist:
+            return JsonResponse({"MESSAGE": "INVALID_USER"}, status=404)
+        
+        return JsonResponse(result, status=200)

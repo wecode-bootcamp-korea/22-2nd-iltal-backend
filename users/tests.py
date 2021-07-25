@@ -14,6 +14,8 @@ class SignupViewTest(TestCase):
             password    = "1234asdf!",
             name        = "dmwkdm"
         )
+    def tearDown(self):
+        User.objects.all().delete()
 
     def test_signupview_post_success(self):
         client = Client()
@@ -94,9 +96,6 @@ class SignupViewTest(TestCase):
                 "MESSAGE": "KEY_ERROR"
             }
         )
-
-    def tearDown(self):
-        User.objects.all().delete()
 
 class HostTest(TestCase):
     def setUp(self):
