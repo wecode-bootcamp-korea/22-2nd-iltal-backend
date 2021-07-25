@@ -1,10 +1,11 @@
 import json, re, bcrypt
 
-from django.views import View
-from django.http  import JsonResponse
+from django.views       import View
+from django.http        import JsonResponse
+from django.shortcuts   import get_object_or_404
 
-from users.models import User, Host
-from users.models import User
+from users.models       import User, Host
+import users.utils
 
 class SignupView(View):
     def post(self, request):
@@ -32,11 +33,13 @@ class SignupView(View):
                 name            = data["name"],
             )
 
-            return JsonResponse ({"MESSAGE":"SUCCESS"}, status = 201)
         except KeyError:
             return JsonResponse ({"MESSAGE":"KEY_ERROR"}, status = 400)
 
+        return JsonResponse ({"MESSAGE":"SUCCESS"}, status = 201)
+
 class HostView(View):
+    @users.utils.user_validator
     def get(self, request):
         try:
             host = Host.objects.get(user_id = request.user.id)
@@ -46,16 +49,22 @@ class HostView(View):
                 'nickname'      : host.nickname,
                 'profile_url'   : host.profile_url
             }
-            
+        except AttributeError :
+            return JsonResponse({'message': 'INVALID_USER'}, status=401)
+
         except KeyError:
-            return JsonResponse({"MESSAGE": "KEY_ERROR"}, status=404)
+            return JsonResponse({'message': 'KEY_ERROR'}, status=401)
+
         except Host.DoesNotExist:
-            return JsonResponse({"MESSAGE": "INVALID_HOST"}, status=404)        
-        return JsonResponse(result, status=200)       
-    def post(self, request, user_id):
+            return JsonResponse({'message': 'INVALID_USER'}, status=401)
+
+        return JsonResponse(result, status=200) 
+    
+    @users.utils.user_validator      
+    def post(self, request):
         try:
             data = json.loads(request.body)
-            user = User.objects.get(id = user_id)            
+            user = User.objects.get(id = request.user.id)
             if Host.objects.filter(user_id = user.id).exists() :
                 return JsonResponse({"MESSAGE": "DUPLE_USER"}, status=404)
             Host.objects.create(
@@ -64,38 +73,34 @@ class HostView(View):
                 profile_url = data['profile_url'],
                 is_deleted  = False
             )
+
+        except AttributeError :
+            return JsonResponse({'message': 'INVALID_USER'}, status=401)   
+
         except KeyError:
-            return JsonResponse({"MESSAGE": "KEY_ERROR"}, status=404)
+            return JsonResponse({'message': 'KEY_ERROR'}, status=401)
+
         except User.DoesNotExist:
-            return JsonResponse({"MESSAGE": "INVALID_USER"}, status=404)        
-        return JsonResponse({'MESSAGE':'SUCCESS'}, status=201)
-    def patch(self, request, user_id):
+            return JsonResponse({'message': 'INVALID_USER'}, status=401) 
+
+        return JsonResponse ({"MESSAGE":"SUCCESS"}, status = 201)
+    
+    @users.utils.user_validator    
+    def patch(self, request):
             try:
                 data             = json.loads(request.body)
-                host             = Host.objects.get(user_id = user_id)
+                host             = get_object_or_404(Host,user_id = request.user.id)
                 host.nickname    = data['nickname']
                 host.profile_url = data['profile_url']
                 host.save()
 
+            except AttributeError :
+                return JsonResponse({'message': 'INVALID_USER'}, status=401) 
+
             except KeyError:
-                return JsonResponse({"MESSAGE": "KEY_ERROR"}, status=404)
+                return JsonResponse({'message': 'KEY_ERROR'}, status=401)
+
             except Host.DoesNotExist:
-                return JsonResponse({"MESSAGE": "INVALID_HOST"}, status=404)            
-            return JsonResponse({'MESSAGE':'SUCCESS'}, status=201)      
-    def get(self, request, user_id):
-        try:
-            hostuser = Host.objects.select_related('user').get(user_id = user_id)
-            result   = {
-                'id'            : hostuser.id,
-                'user_id'       : hostuser.user_id,
-                'nickname'      : hostuser.nickname,
-                'profile_url'   : hostuser.profile_url
-            }
-
-        except KeyError:
-            return JsonResponse({"MESSAGE": "KEY_ERROR"}, status=404)
-
-        except User.DoesNotExist:
-            return JsonResponse({"MESSAGE": "INVALID_USER"}, status=404)
-        
-        return JsonResponse(result, status=200)
+                return JsonResponse({'message': 'HOST_ERROR'}, status=401) 
+                           
+            return JsonResponse ({"MESSAGE":"SUCCESS"}, status = 201)   

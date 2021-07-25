@@ -1,10 +1,17 @@
 import json
+from sys import path
+import jwt
 
-from django.http    import response
-from django.test    import TestCase, Client
+from django.http                import JsonResponse, cookie
+from django.http.response       import HttpResponse
+from django.views.generic.base  import View
+from django.http                import request, response
+from django.test                import TestCase, Client, client, utils
+from django.test                import RequestFactory
 
-from unittest.mock  import patch, MagicMock
-from users.models   import Host, User
+from unittest.mock              import patch, MagicMock
+from users.models               import Host, User
+from my_settings                import SECRET_KEY,ALGORITHM
 
 class SignupViewTest(TestCase):
     def setUp(self):
@@ -103,86 +110,104 @@ class HostTest(TestCase):
             id          = 1,
             kakao_id    = 1,
             name        = 'anhesu',
-            profile_url = 'testurl'
-        )
-        User.objects.create(
-            id          = 2,
-            kakao_id    = 1,
-            name        = 'anhesu',
-            profile_url = 'testurl'
+            profile_url = 'testurl',
+            email       ='anhesu1@naver.com',
+            password    = '1234'
         )
         Host.objects.create (
-            nickname    = "test",
-            user_id     = 1,
-            profile_url = 'testurl'
+            id          = 1,
+            nickname    = 'anhesu',
+            profile_url = 'testurl',
+            user_id     = 1
         )
+        self.client.head
+    def tearDown(self):
+        Host.objects.all().delete() 
 
+    def test_hostview_get_success(self):
+        client = Client(HTTP_USER_AGENT="Mozilla/5.0 ...", HTTP_Authorization = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxfQ.Rycaz6XldIy-q-xnORvTDQcdfOvEuTrE1BSSf74AiEQ")
+        response = client.get('/users/host', content_type='application/json')
+        self.assertEquals(response.status_code,200)
+        self.assertEquals(response.json(),{"id":1,"user_id":1,"nickname":"anhesu","profile_url":"testurl"})
+
+    def test_hostview_get_Host_Not_Exists(self):
+        client = Client(HTTP_USER_AGENT="Mozilla/5.0 ...", HTTP_Authorization = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyfQ.VKQ8Cu0rSzuQzmduGTZb1YnF3nB0U7cGqseq1T8RSjs")
+        response = client.get('/users/host', content_type='application/json')
+        self.assertEquals(response.status_code,401)
+        self.assertEquals(response.json(),{'message': 'INVALID_USER'})
+    
     def test_hostview_post_success(self):
-        client = Client()
-        host   = {
-            'nickname'   : 'anhesu',
-            'profile_url': 'testurl',
-            'user_id'    : 2
+        User.objects.create(
+            id          = 2,
+            kakao_id    = 11,
+            name        = 'anhesu11',
+            profile_url = 'testurl11',
+            email       ='anhesu111@naver.com',
+            password    = '12345'
+        )
+        client = Client(HTTP_USER_AGENT="Mozilla/5.0 ...", HTTP_Authorization = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyfQ.VKQ8Cu0rSzuQzmduGTZb1YnF3nB0U7cGqseq1T8RSjs")
+        host = {
+            "nickname":"anhesu11",
+            "profile_url":"test_url2"
         }
-        response = client.post('/users/host/2',json.dumps(host),content_type='application/json')
-        self.assertEqual(response.status_code,201)
+        response = client.post('/users/host', json.dumps(host), content_type='application/json')
+        self.assertEquals(response.status_code,201)
+        self.assertEquals(response.json(),{"MESSAGE":"SUCCESS"})
+
+    def test_hostview_post_duple_user(self):
+        client = Client(HTTP_USER_AGENT="Mozilla/5.0 ...", HTTP_Authorization = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxfQ.Rycaz6XldIy-q-xnORvTDQcdfOvEuTrE1BSSf74AiEQ")
+        host = {
+            "nickname":"anhesu11",
+            "profile_url":"test_url2"
+        }
+        response = client.post('/users/host', json.dumps(host), content_type='application/json')
+        self.assertEquals(response.status_code,404)
+        self.assertEquals(response.json(),{"MESSAGE": "DUPLE_USER"})
 
     def test_hostview_post_keyerror(self):
-        client = Client()
-        host   = {
-            'nickname'   : 'anhesu',
-            'profileurl': 'testurl',
-            'userid'    : 2
+        User.objects.create(
+            id          = 2,
+            kakao_id    = 11,
+            name        = 'anhesu11',
+            profile_url = 'testurl11',
+            email       ='anhesu111@naver.com',
+            password    = '12345'
+        )
+        client = Client(HTTP_USER_AGENT="Mozilla/5.0 ...", HTTP_Authorization = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyfQ.VKQ8Cu0rSzuQzmduGTZb1YnF3nB0U7cGqseq1T8RSjs")
+        host = {
+            "nickname":"anhesu11",
+            "profileurl":"test_url2"
         }
-        response = client.post('/users/host/2',json.dumps(host),content_type='application/json')
-        self.assertEqual(response.status_code,404)
-        self.assertEqual(response.json(),{"MESSAGE":"KEY_ERROR"})
-
-    def test_hostview_post_user_notexists(self):
-        client = Client()
-        host   = {
-            'nicknamee'   : 'anhesu',
-            'profileurll': 'testurl',
-            'useridd'    : 20
-        }
-        response = client.post('/users/host/2',json.dumps(host),content_type='application/json')
-        self.assertEqual(response.status_code,404)
-
-    def test_hostview_get(self):
-        client   = Client()
-        response = client.get('/users/host/1',content_type='application/json')
-        self.assertEqual(response.status_code,200)
-        self.assertEqual(response.json(),{'id': 1, 'user_id': 1, 'nickname': 'test', 'profile_url': 'testurl'})
-
-    def test_hostview_get_host_notexists(self):
-        client   = Client()
-        response = client.get('/users/host/10',content_type='application/json')
-        self.assertEqual(response.status_code,404)
+        response = client.post('/users/host', json.dumps(host), content_type='application/json')
+        self.assertEquals(response.status_code,401)
+        self.assertEquals(response.json(),{'message': 'KEY_ERROR'})   
 
     def test_hostview_patch_success(self):
-        client = Client()
-        host   = {
-            'nickname'   : 'modifynickname',
-            'profile_url': 'modifyurl'
+        client = Client(HTTP_USER_AGENT="Mozilla/5.0 ...", HTTP_Authorization = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxfQ.Rycaz6XldIy-q-xnORvTDQcdfOvEuTrE1BSSf74AiEQ")
+        host = {
+            "nickname":"anhesu13",
+            "profile_url":"test_url23"
         }
-        response = client.patch('/users/host/1',json.dumps(host),content_type='application/json')
-        self.assertEqual(response.status_code,201)
-        self.assertEqual(response.json(),{"MESSAGE":"SUCCESS"})
+        response = client.patch('/users/host', json.dumps(host), content_type='application/json')
+        self.assertEquals(response.status_code,201)
+        self.assertEquals(response.json(),{"MESSAGE":"SUCCESS"})
 
     def test_hostview_patch_keyerror(self):
-        client = Client()
-        host   = {
-            'nicknamee'   : 'modifynickname',
-            'profileurll': 'modifyurl'
+        client = Client(HTTP_USER_AGENT="Mozilla/5.0 ...", HTTP_Authorization = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxfQ.Rycaz6XldIy-q-xnORvTDQcdfOvEuTrE1BSSf74AiEQ")
+        host = {
+            "nickname":"anhesu13",
+            "profileurl":"test_url23"
         }
-        response = client.patch('/users/host/1',json.dumps(host),content_type='application/json')
-        self.assertEqual(response.status_code,404)
+        response = client.patch('/users/host', json.dumps(host), content_type='application/json')
+        self.assertEquals(response.status_code,401)
+        self.assertEquals(response.json(),{'message': 'KEY_ERROR'})
 
-    def test_hostview_post_host_notexists(self):
-        client = Client()
-        host   = {
-            'nickname'   : 'modifynickname',
-            'profileurl': 'modifyurl'
+    def test_hostview_patch_host_not_exists(self):
+        client = Client(HTTP_USER_AGENT="Mozilla/5.0 ...", HTTP_Authorization = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyfQ.VKQ8Cu0rSzuQzmduGTZb1YnF3nB0U7cGqseq1T8RSjs")
+        host = {
+            "nickname":"anhesu13",
+            "profileurl":"test_url23"
         }
-        response = client.patch('/users/host/1',json.dumps(host),content_type='application/json')
-        self.assertEqual(response.status_code,404)
+        response = client.patch('/users/host', json.dumps(host), content_type='application/json')
+        self.assertEquals(response.status_code,401)
+        self.assertEquals(response.json(),{'message': 'INVALID_USER'})                 
