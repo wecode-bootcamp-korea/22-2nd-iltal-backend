@@ -20,7 +20,6 @@ class Product(TimeStampModel):
     subcategory    = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='products')
     host           = models.ForeignKey(Host, on_delete=models.CASCADE)
     title          = models.CharField(max_length=200)
-    coordinate     = models.JSONField()
     region         = models.CharField(max_length=200)
     price          = models.DecimalField(decimal_places=2, max_digits=10)
     is_group       = models.BooleanField()
