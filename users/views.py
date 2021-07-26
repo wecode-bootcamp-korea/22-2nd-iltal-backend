@@ -65,17 +65,14 @@ class HostView(View):
     @users.utils.user_validator      
     def post(self, request):
         try:
-            data = json.loads(request.body)
             
             if Host.objects.filter(user_id = request.user.id).exists() :
                 return JsonResponse({"MESSAGE": "DUPLE_USER"}, status=404)
 
-            profile_url = core.views.upload_data(request.FILES["background_url"])
-            
             Host.objects.create(
                 user_id     = request.user.id,
-                nickname    = data['nickname'],
-                profile_url = profile_url
+                nickname    = request.POST.get('nickname'),
+                profile_url = core.views.upload_data(request.FILES["background_url"])
             )
 
         except AttributeError :
@@ -92,10 +89,9 @@ class HostView(View):
     @users.utils.user_validator    
     def patch(self, request):
         try:
-            data             = json.loads(request.body)
             host             = get_object_or_404(Host, user_id = request.user.id)
-            host.nickname    = data['nickname']
-            host.profile_url = data['profile_url']
+            host.nickname    =request.POST.get('nickname')
+            host.profile_url = core.views.upload_data(request.FILES["background_url"])
             host.save()
 
         except AttributeError :

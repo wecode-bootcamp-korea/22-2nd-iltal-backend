@@ -9,7 +9,7 @@ from logging         import error
 def upload_data(file):
 
     try :
-
+        print(file)
         s3_client = boto3.client(
                         's3',
                         aws_access_key_id = AWS_ACCESS_KEY_ID,
