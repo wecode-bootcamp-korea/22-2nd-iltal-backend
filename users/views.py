@@ -1,10 +1,10 @@
-import json, re, bcrypt, jwt
+import json, re, bcrypt, jwt, requests
 
 from django.http      import JsonResponse
 from django.views     import View
 
-from users.models   import User
-from my_settings    import SECRET_KEY, ALGORITHM
+from users.models     import User
+from my_settings      import SECRET_KEY, ALGORITHM
 
 class SignupView(View):
     def post(self, request):
@@ -53,6 +53,29 @@ class SigninView(View):
             access_token = jwt.encode({"user_id": user.id}, SECRET_KEY, ALGORITHM)
 
             return JsonResponse({"message":"success","access_token": access_token}, status=200)
+
+        except KeyError:
+            return JsonResponse({"message": "KEY_ERROR"}, status=400)
+
+class KakaoSigninView(View):
+    def get(self, request):
+        try:
+            kakao_access_token     = request.headers.get('Authorization')
+            headers                = {'Authorization': f'Bearer {kakao_access_token}'}
+            kakao_user             = requests.get('https://kapi.kakao.com/v2/user/me', headers=headers).json()                
+            user, is_created       = User.objects.get_or_create(kakao_id=kakao_user['id'])
+
+            if is_created:
+                kakao_account    = kakao_user['kakao_account']
+                properties       = kakao_user['properties']
+                user.email       = kakao_account["email"]
+                user.name        = properties["nickname"]
+                user.profile_url = properties["profile_image"]
+                user.save()
+            
+            access_token = jwt.encode({'user_id': user.id}, SECRET_KEY, ALGORITHM)
+
+            return JsonResponse({"message":"success", "TOKEN": access_token}, status=200)
 
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)
