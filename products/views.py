@@ -13,8 +13,7 @@ class ProductView(View):
         try:
             # background_url = request.FILES["background_url"]
             # data = core.views.upload_data(background_url)
-            print(request.POST)
-
+            
             Product.objects.create (
                 title           =  request.POST.get('title'),
                 region          =  request.POST.get('region'),
