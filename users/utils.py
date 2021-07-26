@@ -12,12 +12,13 @@ def user_validator(function):
             
             if not access_token:
                 return JsonResponse({"message": "NEED_ACCESS_TOKEN"}, status=401)
-
+            
             payload = jwt.decode(access_token, SECRET_KEY, ALGORITHM)
             
             if not User.objects.filter(id=payload["user_id"]).exists():
                 return JsonResponse({"message": "INVALID_USER"}, satus=400)
-                
+            
+            
             request.user = User.objects.get(id=payload["user_id"])
             return function(self, request, *args, **kwargs)
 
@@ -28,6 +29,6 @@ def user_validator(function):
             return JsonResponse({"message": "EXPIRED_TOKEN"}, status=401)
 
         except User.DoesNotExist:
-            return JsonResponse({"message": "INVALID_USER"}, status=401)
+            return JsonResponse({"message": "INVALID_USER"}, status=404)
 
     return wrapper

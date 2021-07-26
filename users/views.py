@@ -1,13 +1,13 @@
 import json, re, bcrypt, jwt
 import users.utils
 import core.views
+import requests
 
 from django.views       import View
 from django.http        import JsonResponse
 from django.shortcuts   import get_object_or_404
 
 from users.models       import User, Host
-from my_settings    import SECRET_KEY, ALGORITHM
 
 class SignupView(View):
     def post(self, request):
@@ -37,6 +37,7 @@ class SignupView(View):
 
         except KeyError:
             return JsonResponse ({"MESSAGE":"KEY_ERROR"}, status = 400)
+
 class SigninView(View):
     def post(self, request):
 
@@ -60,10 +61,12 @@ class SigninView(View):
 
         return JsonResponse ({"MESSAGE":"SUCCESS"}, status = 201)
 
+
 class HostView(View):
     @users.utils.user_validator
     def get(self, request):
         try:
+
             host = Host.objects.get(user_id = request.user.id)
             result   = {
                 'id'            : host.id,
@@ -71,18 +74,19 @@ class HostView(View):
                 'nickname'      : host.nickname,
                 'profile_url'   : host.profile_url
             }
+
         except AttributeError :
             return JsonResponse({'message': 'INVALID_USER'}, status=401)
 
         except KeyError:
-            return JsonResponse({'message': 'KEY_ERROR'}, status=401)
+            return JsonResponse({'message': 'KEY_ERROR'}, status=400)
 
         except Host.DoesNotExist:
-            return JsonResponse({'message': 'INVALID_USER'}, status=401)
+            return JsonResponse({'message': 'INVALID_USER'}, status=400)
 
         return JsonResponse(result, status=200) 
-    
-    @users.utils.user_validator      
+
+    @users.utils.user_validator
     def post(self, request):
         try:
             
@@ -92,36 +96,32 @@ class HostView(View):
             Host.objects.create(
                 user_id     = request.user.id,
                 nickname    = request.POST.get('nickname'),
-                profile_url = core.views.upload_data(request.FILES["background_url"])
+                profile_url = core.views.upload_data(request.FILES['profile_url'])
             )
 
         except AttributeError :
-            return JsonResponse({'message': 'INVALID_USER'}, status=401)   
+            return JsonResponse({'message': 'INVALID_USER'}, status=400)   
 
         except KeyError:
-            return JsonResponse({'message': 'KEY_ERROR'}, status=401)
+            return JsonResponse({'message': 'KEY_ERROR'}, status=400)
 
         except User.DoesNotExist:
-            return JsonResponse({'message': 'INVALID_USER'}, status=401) 
+            return JsonResponse({'message': 'INVALID_USER'}, status=400) 
 
         return JsonResponse ({"MESSAGE":"SUCCESS"}, status = 201)
-    
+
     @users.utils.user_validator    
     def patch(self, request):
         try:
-            host             = get_object_or_404(Host, user_id = request.user.id)
-            host.nickname    =request.POST.get('nickname')
-            host.profile_url = core.views.upload_data(request.FILES["background_url"])
+            host             = Host.objects.get(user_id = request.user.id)
+            host.nickname    = json.loads(request.body)['nickname'],
             host.save()
 
-        except AttributeError :
-            return JsonResponse({'message': 'INVALID_USER'}, status=401) 
-
         except KeyError:
-            return JsonResponse({'message': 'KEY_ERROR'}, status=401)
+            return JsonResponse({'message': 'KEY_ERROR'}, status=400)
 
         except Host.DoesNotExist:
-            return JsonResponse({'message': 'HOST_ERROR'}, status=401) 
+            return JsonResponse({'message': 'HOST_ERROR'}, status=400) 
                         
         return JsonResponse ({"MESSAGE":"SUCCESS"}, status = 201)   
 
