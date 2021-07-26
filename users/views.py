@@ -64,14 +64,14 @@ class HostView(View):
     def post(self, request):
         try:
             data = json.loads(request.body)
-            user = User.objects.get(id = request.user.id)
-            if Host.objects.filter(user_id = user.id).exists() :
+            
+            if Host.objects.filter(user_id = request.user.id).exists() :
                 return JsonResponse({"MESSAGE": "DUPLE_USER"}, status=404)
+            
             Host.objects.create(
-                user_id     = user.id,
+                user_id     = request.user.id,
                 nickname    = data['nickname'],
-                profile_url = data['profile_url'],
-                is_deleted  = False
+                profile_url = data['profile_url']
             )
 
         except AttributeError :
@@ -87,20 +87,20 @@ class HostView(View):
     
     @users.utils.user_validator    
     def patch(self, request):
-            try:
-                data             = json.loads(request.body)
-                host             = get_object_or_404(Host,user_id = request.user.id)
-                host.nickname    = data['nickname']
-                host.profile_url = data['profile_url']
-                host.save()
+        try:
+            data             = json.loads(request.body)
+            host             = get_object_or_404(Host, user_id = request.user.id)
+            host.nickname    = data['nickname']
+            host.profile_url = data['profile_url']
+            host.save()
 
-            except AttributeError :
-                return JsonResponse({'message': 'INVALID_USER'}, status=401) 
+        except AttributeError :
+            return JsonResponse({'message': 'INVALID_USER'}, status=401) 
 
-            except KeyError:
-                return JsonResponse({'message': 'KEY_ERROR'}, status=401)
+        except KeyError:
+            return JsonResponse({'message': 'KEY_ERROR'}, status=401)
 
-            except Host.DoesNotExist:
-                return JsonResponse({'message': 'HOST_ERROR'}, status=401) 
-                           
-            return JsonResponse ({"MESSAGE":"SUCCESS"}, status = 201)   
+        except Host.DoesNotExist:
+            return JsonResponse({'message': 'HOST_ERROR'}, status=401) 
+                        
+        return JsonResponse ({"MESSAGE":"SUCCESS"}, status = 201)   
