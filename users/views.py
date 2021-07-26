@@ -5,7 +5,9 @@ from django.http        import JsonResponse
 from django.shortcuts   import get_object_or_404
 
 from users.models       import User, Host
+
 import users.utils
+import core.views
 
 class SignupView(View):
     def post(self, request):
@@ -67,11 +69,13 @@ class HostView(View):
             
             if Host.objects.filter(user_id = request.user.id).exists() :
                 return JsonResponse({"MESSAGE": "DUPLE_USER"}, status=404)
+
+            profile_url = core.views.upload_data(request.FILES["background_url"])
             
             Host.objects.create(
                 user_id     = request.user.id,
                 nickname    = data['nickname'],
-                profile_url = data['profile_url']
+                profile_url = profile_url
             )
 
         except AttributeError :
