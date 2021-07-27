@@ -1,23 +1,22 @@
-import json
-import uuid
-import core.views 
-
 from django.views    import View
 from django.http     import JsonResponse
 
-from datetime        import datetime
 from products.models import Product
+from my_settings     import BUCKET, SECRET_KEY, ALGORITHM
+from iltal.settings  import AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
+from core.views      import AWSAPI
 
 class ProductView(View):
     def post(self, request):
         try:
-            print(request.FILES.get('background_url'))
+            aws = AWSAPI(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET)
+
             Product.objects.create (
                 title           =  request.POST.get('title'),
                 region          =  request.POST.get('region'),
                 price           =  request.POST.get('price'),
                 is_group        =  request.POST.get('is_group'),
-                background_url  =  core.views.upload_data(request.FILES.get('background_url')),
+                background_url  =  aws.upload_file(request.FILES.get('background_url')),
                 is_deleted      =  False,
                 host_id         =  request.POST.get('host_id'),
                 subcategory_id  =  request.POST.get('subcategory_id')
