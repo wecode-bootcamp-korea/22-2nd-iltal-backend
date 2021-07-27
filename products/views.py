@@ -11,16 +11,16 @@ from products.models import Product
 class ProductView(View):
     def post(self, request):
         try:
-            data = json.loads(request.body)
+            
             Product.objects.create (
-                title           =  data['title'],
-                region          =  data['region'],
-                price           =  data['price'],
-                is_group        =  data['is_group'],
-                background_url  =  core.views.upload_data(data['background_url']),
+                title           =  request.POST.get('title'),
+                region          =  request.POST.get('region'),
+                price           =  request.POST.get('price'),
+                is_group        =  request.POST.get('is_group'),
+                background_url  =  core.views.upload_data(request.POST.get('background_url')),
                 is_deleted      =  False,
-                host_id         =  data['host_id'],
-                subcategory_id  =  data['subcategory_id']
+                host_id         =  request.POST.get('host_id'),
+                subcategory_id  =  request.POST.get('subcategory_id')
             )    
 
         except KeyError:
