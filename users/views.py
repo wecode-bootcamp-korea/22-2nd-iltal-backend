@@ -8,6 +8,10 @@ from django.http        import JsonResponse
 from django.shortcuts   import get_object_or_404
 
 from users.models       import User, Host
+from users.utils        import user_validator
+from my_settings        import BUCKET, SECRET_KEY, ALGORITHM
+from iltal.settings     import AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
+from core.views         import AWSAPI
 
 class SignupView(View):
     def post(self, request):
@@ -63,7 +67,7 @@ class SigninView(View):
 
 
 class HostView(View):
-    @users.utils.user_validator
+    @user_validator
     def get(self, request):
         try:
 
@@ -86,9 +90,10 @@ class HostView(View):
 
         return JsonResponse(result, status=200) 
 
-    @users.utils.user_validator
+    @user_validator
     def post(self, request):
         try:
+            aws = AWSAPI(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET)
             
             if Host.objects.filter(user_id = request.user.id).exists() :
                 return JsonResponse({"MESSAGE": "DUPLE_USER"}, status=404)
@@ -96,7 +101,7 @@ class HostView(View):
             Host.objects.create(
                 user_id     = request.user.id,
                 nickname    = request.POST.get('nickname'),
-                profile_url = core.views.upload_data(request.FILES['profile_url'])
+                profile_url = aws.upload_file(request.FILES['profile_url'])
             )
 
         except AttributeError :
@@ -110,11 +115,11 @@ class HostView(View):
 
         return JsonResponse ({"MESSAGE":"SUCCESS"}, status = 201)
 
-    @users.utils.user_validator    
+    @user_validator    
     def patch(self, request):
         try:
             host             = Host.objects.get(user_id = request.user.id)
-            host.nickname    = json.loads(request.body)['nickname'],
+            host.nickname    = json.loads(request.body)['nickname']
             host.save()
 
         except KeyError:
@@ -123,5 +128,4 @@ class HostView(View):
         except Host.DoesNotExist:
             return JsonResponse({'message': 'HOST_ERROR'}, status=400) 
                         
-        return JsonResponse ({"MESSAGE":"SUCCESS"}, status = 201)   
-
+        return JsonResponse ({"MESSAGE":"SUCCESS"}, status = 201)
