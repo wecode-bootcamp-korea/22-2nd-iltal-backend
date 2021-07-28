@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import functools, time, jwt, boto3, uuid, logging
-=======
-import functools, time, jwt, boto3, uuid
->>>>>>> 73d5bfd (- RESET migrations)
 
 from django.db   import connection, reset_queries
 from django.conf import settings
