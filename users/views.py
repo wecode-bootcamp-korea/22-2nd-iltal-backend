@@ -44,17 +44,17 @@ class SigninView(View):
 
         try:
             data = json.loads(request.body)
-
+            
             if not User.objects.filter(email=data['email']).exists():
                 return JsonResponse({"message" : "INVALID_USER"}, status=401)
 
             user = User.objects.get(email=data["email"])
-
+            
             if not bcrypt.checkpw(data["password"].encode("utf-8"), user.password.encode("utf-8")):
                 return JsonResponse({"message": "INVALID_USER"}, status=401)
-
+            
             access_token = jwt.encode({"user_id": user.id}, SECRET_KEY, ALGORITHM)
-
+            
             return JsonResponse({"message":"success","access_token": access_token}, status=200)
 
         except KeyError:
@@ -108,23 +108,22 @@ class HostView(View):
     @user_validator      
     def post(self, request):
         try:
-            
             aws = AWSAPI(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET)
 
             if Host.objects.filter(user_id = request.user.id).exists() :
                 return JsonResponse({"MESSAGE": "DUPLE_USER"}, status=404)
-
+            print(request.FILES["background_url"])
             Host.objects.create(
                 user_id     = request.user.id,
                 nickname    = request.POST.get('nickname'),
-                profile_url = aws.upload_data(request.FILES["background_url"])
+                profile_url = aws.upload_file(request.FILES["background_url"])
             )
 
         except AttributeError :
             return JsonResponse({'message': 'INVALID_USER'}, status=401)   
 
         except KeyError:
-            return JsonResponse({'message': 'KEY_ERROR'}, status=401)
+            return JsonResponse({'message': 'KEY_ERROR'}, status=400)
 
         except User.DoesNotExist:
             return JsonResponse({'message': 'INVALID_USER'}, status=401) 

@@ -107,7 +107,7 @@ class PrivateProductDetailView(View):
         except ValueError:
             return JsonResponse({"message":"VALUE_ERROR"},status=400)
 
-        @confirm_user
+    @confirm_user
     def post(self, request, product_id):
         try: 
             data    = json.loads(request.body)

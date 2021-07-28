@@ -1,11 +1,19 @@
-import json, bcrypt, jwt
+from sys                            import path
+import json, bcrypt, jwt, requests
 
-from django.http    import response
-from django.test    import TestCase, Client
+from PIL                            import Image
+from io                             import BytesIO
 
-from unittest.mock  import patch, MagicMock
-from users.models   import User
-from my_settings    import SECRET_KEY, ALGORITHM
+from django.views.generic.base      import View
+from django.http.response           import HttpResponse
+from django.test                    import RequestFactory
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test                    import TestCase, Client, client, utils
+from django.http                    import JsonResponse, cookie, response, request
+
+from users.models                   import Host, User
+from unittest.mock                  import patch, MagicMock
+from my_settings                    import SECRET_KEY, ALGORITHM
 
 class SignupViewTest(TestCase):
     def setUp(self):
@@ -306,3 +314,86 @@ class KakaoSigninTest(TestCase):
                 'TOKEN'     : access_token
             }
         )
+
+class HostTest(TestCase):
+    def setUp(self):
+        User.objects.create(
+            id          = 1,
+            kakao_id    = 1,
+            name        = 'anhesu',
+            profile_url = 'testurl',
+            email       ='anhesu1@naver.com',
+            password    = bcrypt.hashpw("1234".encode('utf-8'), bcrypt.gensalt()).decode()
+        )
+        self.client.head
+
+    def test_hostview_get_success(self):
+        client = Client()
+
+        Host.objects.create (
+            id          = 1,
+            nickname    = 'anhesu',
+            profile_url = 'testurl',
+            user_id     = 1
+        )
+        user = {'email' : 'anhesu1@naver.com', 'password' : '1234'}
+
+        login_response  = client.post('/users/signin', json.dumps(user), content_type="application/json")
+        access_token   = login_response.json()['access_token']
+        headers = {"HTTP_Authorization" : access_token}
+        response = client.get('/users/host', content_type='application/json', **headers)
+        
+        self.assertEquals(response.status_code,200)
+        self.assertEquals(response.json(),{"id":1,"user_id":1,"nickname":"anhesu","profile_url":"testurl"})
+    
+    def test_hostview_get_Host_Not_Exists(self):    
+        client = Client()
+        
+        Host.objects.create (
+            id          = 1,
+            nickname    = 'anhesu',
+            profile_url = 'testurl',
+            user_id     = 1
+        )
+        user = {'email' : 'anhesu1@naver.com', 'password' : '12345'}
+
+        access_token   = jwt.encode({"user_id": 2}, SECRET_KEY, ALGORITHM)
+        headers = {"HTTP_Authorization" : access_token}
+        response = client.get('/users/host', content_type='application/json', **headers)
+        
+        self.assertEquals(response.status_code,401)
+        self.assertEquals(response.json(),{'message': 'INVALID_USER'})
+    
+    @patch("core.views.AWSAPI.upload_file")
+    def test_hostview_post_success(self, mocked_request):
+        client = Client()
+        mocked_request.return_value = 'sss'
+
+        User.objects.create(
+            id          = 2,
+            kakao_id    = 1,
+            name        = 'anhesu',
+            profile_url = 'testurl',
+            email       ='anhesu11@naver.com',
+            password    = bcrypt.hashpw("12345".encode('utf-8'), bcrypt.gensalt()).decode()
+        )
+        user = {'email' : 'anhesu11@naver.com', 'password' : '12345'}
+        host = {'nickname':'anhesu11', 'profile_url':'test_url2'}
+        
+        login_response  = client.post('/users/signin', json.dumps(user), content_type="application/json")
+        access_token   = login_response.json()['access_token']
+        headers = {"HTTP_Authorization" : access_token}
+
+        stream = BytesIO()
+        image = Image.new('RGB', (100, 100))
+        image.save(stream, format='jpeg')
+        image_file  = SimpleUploadedFile("test.jpg", stream.getvalue(), content_type="image/jpg")
+        
+        response = client.post(
+            '/users/host',
+            {'background_url' : image_file, "nickname" : "anhesu"},
+            format = 'multipart',
+            **{'HTTP_Authorization' : access_token }
+        )
+
+        self.assertEqual(response.status_code, 201)
