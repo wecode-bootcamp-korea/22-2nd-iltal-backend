@@ -8,9 +8,9 @@ from django.http                import request, response
 from django.test                import TestCase, Client, client, utils
 from django.test                import RequestFactory
 
-from unittest.mock              import patch, MagicMock
-from users.models               import Host, User
-from my_settings                import SECRET_KEY,ALGORITHM
+from unittest.mock  import patch, MagicMock
+from users.models   import Host, User
+from my_settings    import SECRET_KEY, ALGORITHM
 
 class SignupViewTest(TestCase):
     def setUp(self):
@@ -194,7 +194,122 @@ class SigninViewTest(TestCase):
                 "message" : "INVALID_USER"
             }
         )
+class KakaoSigninTest(TestCase):
+    def setUp(self):
+        User.objects.create(
+            id              = 1,
+            kakao_id        = "1234567899",
+            email           = "kakao@kakakak.com",
+        )
 
+    def tearDown(self):
+        User.objects.all().delete()
+
+    @patch('users.views.requests')
+    def test_kakao_signin_success(self, mocked_requests):
+        client = Client()
+
+        class MockedResponse:
+            def json(self):
+                return {
+                    'id': "1234567899",
+                    'connected_at': '2021-07-26T22:29:32Z',
+                    'properties' : {
+                        'nickname' : "test",
+                        'profile_image' : "http://k.kakaocdn.net/dn/bRMq9X/btq5Q6IaoP7/yYLcgclYwEje2FlgN6uIO1/img_640x640.jpg"
+                    }, 
+                    'kakao_account': {
+                        'has_email'            : True, 
+                        'email_needs_agreement': False, 
+                        'is_email_valid'       : True, 
+                        'is_email_verified'    : True, 
+                        'email'                : 'kakao@kakao.com'
+                        }
+                }
+
+        mocked_requests.get = MagicMock(return_value = MockedResponse())
+        headers             = {"Authoriazation":"kakao_token"}
+        response            = client.get("/users/kakao/signin", **headers)       
+        access_token        = response.json()['TOKEN']
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(),
+            {
+                'message'   : 'success',
+                'TOKEN'     : access_token
+            }
+        )
+
+    @patch('users.views.requests')
+    def test_kakao_signin_user_success(self, mocked_requests):
+        client = Client()
+
+        class MockedResponse:
+            def json(self):
+                return {
+                    'id': "1234567899",
+                    'connected_at': '2021-07-26T22:29:32Z',
+                    'properties' : {
+                        'nickname' : "이이이",
+                        'profile_image' : "http://k.kakaocdn.net/dn/bRMq9X/btq5Q6IaoP7/yYLcgclYwEje2FlgN6uIO1/img_640x640.jpg"
+                    }, 
+                    'kakao_account': {
+                        'has_email'            : True, 
+                        'email_needs_agreement': False, 
+                        'is_email_valid'       : True, 
+                        'is_email_verified'    : True, 
+                        'email'                : "lee@kakao.com"
+                        }
+                }
+
+        mocked_requests.get = MagicMock(return_value = MockedResponse())
+        headers             = {"Authoriazation":"kakao_token"}
+        response            = client.get("/users/kakao/signin", **headers)       
+        access_token        = response.json()['TOKEN']
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(),
+            {
+                'message'   : 'success',
+                'TOKEN'     : access_token
+            }
+        )
+
+    @patch('users.views.requests')
+    def test_kakao_signin_exist_user_success(self, mocked_requests):
+        client = Client()
+
+        class MockedResponse:
+            def json(self):
+                return {
+                    'id': "1234567899",
+                    'connected_at': '2021-07-26T22:29:32Z',
+                    'properties' : {
+                        'nickname' : "mumu",
+                        'profile_image' : "http://k.kakaocdn.net/dn/bRMq9X/btq5Q6IaoP7/yYLcgclYwEje2FlgN6uIO1/img_640x640.jpg"
+                    }, 
+                    'kakao_account': {
+                        'has_email'            : True, 
+                        'email_needs_agreement': False, 
+                        'is_email_valid'       : True, 
+                        'is_email_verified'    : True, 
+                        'email'                : "kakao@kakakak.com"
+                        }
+                }
+
+        mocked_requests.get = MagicMock(return_value = MockedResponse())
+        headers             = {"Authoriazation":"kakao_token"}
+        response            = client.get("/users/kakao/signin", **headers)       
+        access_token        = response.json()['TOKEN']
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(),
+            {
+                'message'   : 'success',
+                'TOKEN'     : access_token
+            }
+        )
+        
 class HostTest(TestCase):
     def setUp(self):
         User.objects.create(
